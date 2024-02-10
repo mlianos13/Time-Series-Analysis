@@ -10,7 +10,7 @@ library(tidyverse)
 library(fpp2)
 library(tidyr)
 
-data <- read_excel("DST_BIL54_train.xlsx")
+data <- read_excel("assigment1/DST_BIL54_train.xlsx")
 colnames(data)[1] <- "Category"
 
 dt1 <- filter(data, Category == "Drivmidler i alt")
