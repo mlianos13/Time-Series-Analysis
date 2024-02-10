@@ -142,4 +142,4 @@ ggplot(dt, aes(x=Time, y=Value)) +
   geom_line(aes(y=yhat_ols), col="red", size=.5) +
   geom_point(data=dt, aes(x=Time,y=y_pred), col="red", size=.5) +
   geom_ribbon(data=dt, aes(x=Time,ymin=y_pred_lwr, ymax=y_pred_upr), inherit.aes=FALSE, alpha=0.2, fill="red") +
-  geom_point(data=dt, aes(x=Time,y=int_visit), col="blue", size=.5)
+  geom_point(data=dt, aes(x=Time,y=Value), col="blue", size=.5)
