@@ -143,3 +143,27 @@ ggplot(dt, aes(x=Time, y=Value)) +
   geom_point(data=dt, aes(x=Time,y=y_pred), col="red", size=.5) +
   geom_ribbon(data=dt, aes(x=Time,ymin=y_pred_lwr, ymax=y_pred_upr), inherit.aes=FALSE, alpha=0.2, fill="red") +
   geom_point(data=dt, aes(x=Time,y=Value), col="blue", size=.5)
+
+
+
+# Calculate residuals
+e_ols <- y - yhat_ols
+
+# Plot residuals against fitted values
+ggplot() +
+  geom_point(data = data.frame(Fitted = yhat_ols[,1], Residuals = e_ols[,1]), aes(x = Fitted, y = Residuals)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Residuals vs Fitted Values", x = "Fitted Values", y = "Residuals")
+
+# Plot residuals against Time (or any other relevant predictor variable)
+ggplot() +
+  geom_point(data = data.frame(Time = dt$Time, Residuals = e_ols[,1]), aes(x = Time, y = Residuals)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Residuals vs Time", x = "Time", y = "Residuals")
+
+# Q-Q plot of residuals to assess normality
+qqnorm(e_ols[,1])
+qqline(e_ols[,1])
+
+# Shapiro-Wilk test for normality of residuals
+shapiro.test(e_ols[,1])
