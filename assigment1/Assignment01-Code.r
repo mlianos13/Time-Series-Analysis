@@ -70,7 +70,7 @@ print(yhat_ols)
 # plot:
 ggplot(dt, aes(x=Time, y=Value)) +
   geom_point() + 
-  geom_line(aes(y=yhat_ols), col="red", size=.5) 
+  geom_line(aes(y=yhat_ols), col="#ff0000", size=.5) 
 
 # we will now calculate the standard errors on the parameters beta_0 and beta_1:
 
@@ -132,14 +132,17 @@ y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
 # plot forecast:
 ggplot(dt, aes(x=Time, y=Value)) +
   geom_point() + 
-  geom_line(aes(y=yhat_ols), col="red", size=.5) +
-  geom_point(data=dt, aes(x=Time,y=y_pred), col="red", size=.5) +
+  geom_line(aes(y=yhat_ols), col="#00ffea", size=.5) +
+  geom_point(data=dt, aes(x=Time,y=y_pred), col="#ff00f2", size=.5) +
   geom_ribbon(data=dt, aes(x=Time,ymin=y_pred_lwr, ymax=y_pred_upr), inherit.aes=FALSE, alpha=0.2, fill="red")
 
 # plot WITH test data:
 ggplot(dt, aes(x=Time, y=Value)) +
   geom_point() + 
-  geom_line(aes(y=yhat_ols), col="red", size=.5) +
-  geom_point(data=dt, aes(x=Time,y=y_pred), col="red", size=.5) +
+  geom_line(aes(y=yhat_ols), col="#00ffea", size=.5) +
+  geom_point(data=dt, aes(x=Time,y=y_pred), col="#ff00f2", size=.5) +
   geom_ribbon(data=dt, aes(x=Time,ymin=y_pred_lwr, ymax=y_pred_upr), inherit.aes=FALSE, alpha=0.2, fill="red") +
   geom_point(data=dt, aes(x=Time,y=Value), col="blue", size=.5)
+
+
+# 2.6 Investigate the residuals from the OLS model. Are there any patterns in the residuals? If so, describe them.
