@@ -146,12 +146,6 @@ forecast_df <- data.frame(
   y_pred_upr = as.vector(y_pred_upr)
 )
 
-# Plot the historical data and fitted line
-p <- ggplot(dt, aes(x = Time, y = Value)) +
-  geom_point() +
-  geom_line(aes(y = yhat_ols), color = "blue") +
-  labs(title = "Original Data and Forecast", x = "Time", y = "Value")
-
 # Convert Time to numeric since ggplot2's geom_smooth works with numeric x-axis for prediction bands
 dt$TimeNumeric <- as.numeric(dt$Time)
 forecast_df$TimeNumeric <- as.numeric(forecast_df$Time)
