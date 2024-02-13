@@ -19,8 +19,13 @@ dt1 <- dt1[, -1]
 months <- seq(as.Date("2018-01-01"), as.Date("2022-11-01"), by="month")
 # months <- seq(as.Date("2018-01-01"), as.Date("2022-11-01"), by="month") creates a sequence of dates from January 2018 to November 2022, one for each month.
 
-x <- 2018 + (as.numeric(format(months, "%m")) - 1) / 12 
+# iterate through months and assign to x 
 
+#x <- 2018 + (as.numeric(format(months, "%m")) - 1) / 12 
+
+print((as.numeric(format(months, "%m")) - 1) / 12 )
+x <- as.numeric(format(months, "%Y")) + (as.numeric(format(months, "%m")) - 1) / 12 
+print(x)
 dt <- pivot_longer(dt1, 
                           cols = everything(),
                           names_to = "Time", 
