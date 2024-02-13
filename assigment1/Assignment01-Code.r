@@ -9,6 +9,8 @@ library(readxl)
 library(tidyverse)
 library(fpp2)
 library(tidyr)
+library(lme4)
+library(lmtest)
 
 data <- read_excel("assigment1/DST_BIL54_train.xlsx")
 colnames(data)[1] <- "Category"
@@ -75,7 +77,7 @@ print(yhat_ols)
 # plot:
 ggplot(dt, aes(x=Time, y=Value)) +
   geom_point() + 
-  geom_line(aes(y=yhat_ols), col="red", size=.5) 
+  geom_line(aes(y=yhat_ols), col="#ff0000", size=.5) 
 
 # we will now calculate the standard errors on the parameters beta_0 and beta_1:
 
@@ -112,12 +114,19 @@ se_theta_0
 theta_1
 se_theta_1
 
+
+
 ## 2.3 Make a forecast for the next 12 months - i.e., compute predicted values with corresponding prediction intervals. Present these values in a table.
 
-# now we use the model for predictions on future timepoints
-# we use the timepoints from the testdata:
-Xtest <- cbind(1, dt$Time)
-print(Xtest)
+# Step 1: Identify the last time point
+last_time_point <- as.Date("2022-11-01")
+
+# Step 2: Generate future time points for the next 12 months
+future_time_points <- seq(from = last_time_point, by = "month", length.out = 13)[-1]  # Generate one extra month and exclude the first
+
+# If you need these as a design matrix for prediction (with an intercept):
+Xtest <- cbind(1, future_time_points)
+
 
 # compute predictions 
 y_pred <- Xtest%*%OLS
@@ -134,41 +143,42 @@ y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
 
 ## 2.4 Plot the fitted model together with the training data and the forecasted values (also plot the prediction intervals of the forecasted values).
 
-# plot forecast:
-ggplot(dt, aes(x=Time, y=Value)) +
-  geom_point() + 
-  geom_line(aes(y=yhat_ols), col="red", size=.5) +
-  geom_point(data=dt, aes(x=Time,y=y_pred), col="red", size=.5) +
-  geom_ribbon(data=dt, aes(x=Time,ymin=y_pred_lwr, ymax=y_pred_upr), inherit.aes=FALSE, alpha=0.2, fill="red")
+# Create a data frame for the forecasted values
+forecast_df <- data.frame(
+  Time = future_time_points, 
+  y_pred = as.vector(y_pred), 
+  y_pred_lwr = as.vector(y_pred_lwr), 
+  y_pred_upr = as.vector(y_pred_upr)
+)
 
-# plot WITH test data:
-ggplot(dt, aes(x=Time, y=Value)) +
-  geom_point() + 
-  geom_line(aes(y=yhat_ols), col="red", size=.5) +
-  geom_point(data=dt, aes(x=Time,y=y_pred), col="red", size=.5) +
-  geom_ribbon(data=dt, aes(x=Time,ymin=y_pred_lwr, ymax=y_pred_upr), inherit.aes=FALSE, alpha=0.2, fill="red") +
-  geom_point(data=dt, aes(x=Time,y=Value), col="blue", size=.5)
+# Convert Time to numeric since ggplot2's geom_smooth works with numeric x-axis for prediction bands
+dt$TimeNumeric <- as.numeric(dt$Time)
+forecast_df$TimeNumeric <- as.numeric(forecast_df$Time)
 
-
-
-# Calculate residuals
-e_ols <- y - yhat_ols
-
-# Plot residuals against fitted values
+# Add the forecasted points and prediction intervals
 ggplot() +
-  geom_point(data = data.frame(Fitted = yhat_ols[,1], Residuals = e_ols[,1]), aes(x = Fitted, y = Residuals)) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  labs(title = "Residuals vs Fitted Values", x = "Fitted Values", y = "Residuals")
+  geom_point(data = dt, aes(x = Time, y = Value)) +  # Plot the historical data points
+  geom_line(data = dt, aes(x = Time, y = yhat_ols), color = "red") +  # Plot the fitted line
+  geom_point(data = forecast_df, aes(x = Time, y = y_pred), color = "red", shape = 1) +  # Plot the forecasted points
+  geom_ribbon(data = forecast_df, aes(x = Time, ymin = y_pred_lwr, ymax = y_pred_upr), fill = "pink", alpha = 0.2) +  # Prediction intervals
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +  # Set x-axis labels to years only
+  labs(title = "Historical Data and Forecast", x = "Time", y = "Value") +
+  theme_minimal()
 
-# Plot residuals against Time (or any other relevant predictor variable)
-ggplot() +
-  geom_point(data = data.frame(Time = dt$Time, Residuals = e_ols[,1]), aes(x = Time, y = Residuals)) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  labs(title = "Residuals vs Time", x = "Time", y = "Residuals")
 
-# Q-Q plot of residuals to assess normality
-qqnorm(e_ols[,1])
-qqline(e_ols[,1])
+# 2.6 Investigate the residuals from the OLS model. Are there any patterns in the residuals? If so, describe them.
 
-# Shapiro-Wilk test for normality of residuals
-shapiro.test(e_ols[,1])
+# Summary of residuals
+summary(e_ols)
+
+# Plot of residuals vs. fitted values
+plot(yhat_ols, e_ols, xlab = "Fitted Values", ylab = "Residuals", main = "Residuals vs. Fitted Values")
+abline(h = 0, col = "red", lty = 2)
+
+# QQ plot
+qqnorm(e_ols)
+qqline(e_ols, col = "red")
+## A Q-Q plot compares the quantiles of the residuals to the quantiles of a theoretical normal distribution.
+
+# Histogram of the residuals
+hist(e_ols, breaks = 20, main = "Histogram of Residuals", xlab = "Residuals")
