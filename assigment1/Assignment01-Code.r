@@ -22,10 +22,6 @@ months <- seq(as.Date("2018-01-01"), as.Date("2022-11-01"), by="month")
 # months <- seq(as.Date("2018-01-01"), as.Date("2022-11-01"), by="month") creates a sequence of dates from January 2018 to November 2022, one for each month.
 
 # iterate through months and assign to x 
-
-#x <- 2018 + (as.numeric(format(months, "%m")) - 1) / 12 
-
-print((as.numeric(format(months, "%m")) - 1) / 12 )
 x <- as.numeric(format(months, "%Y")) + (as.numeric(format(months, "%m")) - 1) / 12 
 print(x)
 dt <- pivot_longer(dt1, 
@@ -33,10 +29,10 @@ dt <- pivot_longer(dt1,
                           names_to = "Time", 
                           values_to = "Value")
 
-dt$Time <- as.Date(months)
+dt$Time <- x
 
 # Now, let's plot
-ggplot(dt, aes(x = Time, y = Value)) + 
+ggplot(dt, aes(x = x, y = Value)) + 
   geom_line() + 
   labs(title = "Training Data over Time", x = "Time", y = "Value") +
   theme_minimal()
@@ -75,7 +71,7 @@ yhat_ols <- X%*%OLS
 print(yhat_ols)
 
 # plot:
-ggplot(dt, aes(x=Time, y=Value)) +
+ggplot(dt, aes(x=x, y=Value)) +
   geom_point() + 
   geom_line(aes(y=yhat_ols), col="#ff0000", size=.5) 
 
@@ -119,14 +115,14 @@ se_theta_1
 ## 2.3 Make a forecast for the next 12 months - i.e., compute predicted values with corresponding prediction intervals. Present these values in a table.
 
 # Step 1: Identify the last time point
-last_time_point <- as.Date("2022-11-01")
+last_x <- max(dt$Time)  # Assuming dt$Time contains your 'x' values
 
 # Step 2: Generate future time points for the next 12 months
-future_time_points <- seq(from = last_time_point, by = "month", length.out = 13)[-1]  # Generate one extra month and exclude the first
+future_x <- seq(from = last_x + 1/12, by = 1/12, length.out = 12)
+
 
 # If you need these as a design matrix for prediction (with an intercept):
-Xtest <- cbind(1, future_time_points)
-
+Xtest <- cbind(1, future_x)  
 
 # compute predictions 
 y_pred <- Xtest%*%OLS
@@ -145,7 +141,7 @@ y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
 
 # Create a data frame for the forecasted values
 forecast_df <- data.frame(
-  Time = future_time_points, 
+  Time = future_x, 
   y_pred = as.vector(y_pred), 
   y_pred_lwr = as.vector(y_pred_lwr), 
   y_pred_upr = as.vector(y_pred_upr)
@@ -157,11 +153,10 @@ forecast_df$TimeNumeric <- as.numeric(forecast_df$Time)
 
 # Add the forecasted points and prediction intervals
 ggplot() +
-  geom_point(data = dt, aes(x = Time, y = Value)) +  # Plot the historical data points
-  geom_line(data = dt, aes(x = Time, y = yhat_ols), color = "red") +  # Plot the fitted line
-  geom_point(data = forecast_df, aes(x = Time, y = y_pred), color = "red", shape = 1) +  # Plot the forecasted points
-  geom_ribbon(data = forecast_df, aes(x = Time, ymin = y_pred_lwr, ymax = y_pred_upr), fill = "pink", alpha = 0.2) +  # Prediction intervals
-  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +  # Set x-axis labels to years only
+  geom_point(data = dt, aes(x = TimeNumeric, y = Value)) +  # Plot the historical data points
+  geom_line(data = dt, aes(x = TimeNumeric, y = yhat_ols), color = "red") +  # Plot the fitted line
+  geom_point(data = forecast_df, aes(x = TimeNumeric, y = y_pred), color = "blue", shape = 1) +  # Plot the forecasted points
+  geom_ribbon(data = forecast_df, aes(x = TimeNumeric, ymin = y_pred_lwr, ymax = y_pred_upr), fill = "blue", alpha = 0.2) +  # Prediction intervals
   labs(title = "Historical Data and Forecast", x = "Time", y = "Value") +
   theme_minimal()
 
