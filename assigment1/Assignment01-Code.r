@@ -11,6 +11,8 @@ library(fpp2)
 library(tidyr)
 library(lme4)
 library(lmtest)
+library(languageserver)
+
 
 data <- read_excel("assigment1/DST_BIL54_train.xlsx")
 colnames(data)[1] <- "Category"
@@ -41,6 +43,8 @@ ggplot(dt, aes(x = x, y = Value)) +
 
 ##--------------------------------------------------------------------------------------------------------------------------##
 
+
+
 ## 2. OLS Model
 
 
@@ -62,6 +66,7 @@ print(y)
 # these are the parameter estimates!
 theta_0 <- OLS[1]
 theta_1 <- OLS[2]
+
 
 
 ## 2.2 Present the values of the parameter estimates βˆ0 and βˆ1 and their estimated standard errors ˆσβˆ0 and ˆσβˆ1
@@ -137,6 +142,8 @@ Vmatrix_pred <- sigma2_ols*(1+(Xtest%*%solve(t(X)%*%X))%*%t(Xtest))
 y_pred_lwr <- y_pred - 1.96*sqrt(diag(Vmatrix_pred))
 y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
 
+
+
 ## 2.4 Plot the fitted model together with the training data and the forecasted values (also plot the prediction intervals of the forecasted values).
 
 # Create a data frame for the forecasted values
@@ -161,6 +168,8 @@ ggplot() +
   theme_minimal()
 
 
+
+
 # 2.6 Investigate the residuals from the OLS model. Are there any patterns in the residuals? If so, describe them.
 
 # Summary of residuals
@@ -177,3 +186,193 @@ qqline(e_ols, col = "red")
 
 # Histogram of the residuals
 hist(e_ols, breaks = 20, main = "Histogram of Residuals", xlab = "Residuals")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3 WLS-Local Linear Model
+
+# 3.2 plot the "λ-weights" vs time. 
+n <- 59 
+lambda = 0.9
+weights <- lambda^((n-1):0)
+# plot the weights:
+barplot(weights, names=1:59)
+
+
+# 3.3 Calculate the sum of all the λ-weights. 
+sum <- sum(weights[1:59])
+print(sum)
+
+# 3.4 Estimate and present the hat_beta0 and hat_beta1 using the training data (WLS model).
+
+SIGMA <- diag(n)
+for (i in 1:n) {
+  SIGMA[i,i] <- 1/lambda^(n-i)
+}
+print(SIGMA[52:59,52:59])
+
+# estimate parameters with WLS (using only first 26 observations)
+WLS <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
+yhat_wls <- X[1:59,]%*%WLS
+
+# estimate parameters with unweighted OLS (for comparison)
+OLS <- solve(t(X[1:59,])%*%X[1:59,])%*%(t(X[1:59,])%*%y[1:59])
+yhat_ols <- X[1:59,]%*%OLS
+
+theta_0 <- WLS[1]
+theta_1 <- WLS[2]
+print(theta_0)
+print(theta_1)
+
+
+# 3.5 Make a forecast for the next 12 months - i.e., compute predicted values with corresponding prediction intervals
+
+## λ = 0.9
+
+y_pred <- Xtest%*%WLS
+Vmatrix_pred <- sigma2_ols*(1+(Xtest%*%solve(t(X)%*%X))%*%t(Xtest))
+y_pred_lwr <- y_pred - 1.96*sqrt(diag(Vmatrix_pred))
+y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
+forecast_df <- data.frame(
+  Time = future_x, 
+  y_pred = as.vector(y_pred), 
+  y_pred_lwr = as.vector(y_pred_lwr), 
+  y_pred_upr = as.vector(y_pred_upr)
+)
+dt$TimeNumeric <- as.numeric(dt$Time)
+forecast_df$TimeNumeric <- as.numeric(forecast_df$Time)
+
+ggplot() +
+  geom_point(data = dt, aes(x = TimeNumeric, y = Value)) +  # Plot the historical data points
+  geom_line(data = dt, aes(x = TimeNumeric, y = yhat_wls), color = "red") +  # Plot the fitted line
+  geom_point(data = forecast_df, aes(x = TimeNumeric, y = y_pred), color = "blue", shape = 1) +  # Plot the forecasted points
+  geom_ribbon(data = forecast_df, aes(x = TimeNumeric, ymin = y_pred_lwr, ymax = y_pred_upr), fill = "blue", alpha = 0.2) +  # Prediction intervals
+  labs(title = "Historical Data and Forecast λ=0.9", x = "Time", y = "Value") +
+  theme_minimal()
+
+## λ = 0.8
+ 
+n <- 59 
+lambda = 0.8
+weights <- lambda^((n-1):0)
+SIGMA <- diag(n)
+for (i in 1:n) {
+  SIGMA[i,i] <- 1/lambda^(n-i)
+}
+WLS <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
+yhat_wls <- X[1:59,]%*%WLS
+theta_0 <- WLS[1]
+theta_1 <- WLS[2]
+print(theta_0)
+print(theta_1)
+
+y_pred <- Xtest%*%WLS
+print(y_pred)
+Vmatrix_pred <- sigma2_ols*(1+(Xtest%*%solve(t(X)%*%X))%*%t(Xtest))
+y_pred_lwr <- y_pred - 1.96*sqrt(diag(Vmatrix_pred))
+y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
+forecast_df <- data.frame(
+  Time = future_x, 
+  y_pred = as.vector(y_pred), 
+  y_pred_lwr = as.vector(y_pred_lwr), 
+  y_pred_upr = as.vector(y_pred_upr)
+)
+dt$TimeNumeric <- as.numeric(dt$Time)
+forecast_df$TimeNumeric <- as.numeric(forecast_df$Time)
+
+ggplot() +
+  geom_point(data = dt, aes(x = TimeNumeric, y = Value)) +  # Plot the historical data points
+  geom_line(data = dt, aes(x = TimeNumeric, y = yhat_wls), color = "red") +  # Plot the fitted line
+  geom_point(data = forecast_df, aes(x = TimeNumeric, y = y_pred), color = "blue", shape = 1) +  # Plot the forecasted points
+  geom_ribbon(data = forecast_df, aes(x = TimeNumeric, ymin = y_pred_lwr, ymax = y_pred_upr), fill = "blue", alpha = 0.2) +  # Prediction intervals
+  labs(title = "Historical Data and Forecast λ=0.8", x = "Time", y = "Value") +
+  theme_minimal()
+
+## λ = 0.7
+
+n <- 59 
+lambda = 0.7
+weights <- lambda^((n-1):0)
+SIGMA <- diag(n)
+for (i in 1:n) {
+  SIGMA[i,i] <- 1/lambda^(n-i)
+}
+WLS <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
+yhat_wls <- X[1:59,]%*%WLS
+theta_0 <- WLS[1]
+theta_1 <- WLS[2]
+print(theta_0)
+print(theta_1)
+
+y_pred <- Xtest%*%WLS
+print(y_pred)
+Vmatrix_pred <- sigma2_ols*(1+(Xtest%*%solve(t(X)%*%X))%*%t(Xtest))
+y_pred_lwr <- y_pred - 1.96*sqrt(diag(Vmatrix_pred))
+y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
+forecast_df <- data.frame(
+  Time = future_x, 
+  y_pred = as.vector(y_pred), 
+  y_pred_lwr = as.vector(y_pred_lwr), 
+  y_pred_upr = as.vector(y_pred_upr)
+)
+dt$TimeNumeric <- as.numeric(dt$Time)
+forecast_df$TimeNumeric <- as.numeric(forecast_df$Time)
+
+ggplot() +
+  geom_point(data = dt, aes(x = TimeNumeric, y = Value)) +  # Plot the historical data points
+  geom_line(data = dt, aes(x = TimeNumeric, y = yhat_wls), color = "red") +  # Plot the fitted line
+  geom_point(data = forecast_df, aes(x = TimeNumeric, y = y_pred), color = "blue", shape = 1) +  # Plot the forecasted points
+  geom_ribbon(data = forecast_df, aes(x = TimeNumeric, ymin = y_pred_lwr, ymax = y_pred_upr), fill = "blue", alpha = 0.2) +  # Prediction intervals
+  labs(title = "Historical Data and Forecast λ=0.7", x = "Time", y = "Value") +
+  theme_minimal()
+
+## λ = 0.6
+
+n <- 59 
+lambda = 0.6
+weights <- lambda^((n-1):0)
+SIGMA <- diag(n)
+for (i in 1:n) {
+  SIGMA[i,i] <- 1/lambda^(n-i)
+}
+WLS <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
+yhat_wls <- X[1:59,]%*%WLS
+theta_0 <- WLS[1]
+theta_1 <- WLS[2]
+print(theta_0)
+print(theta_1)
+ 
+y_pred <- Xtest%*%WLS
+print(y_pred)
+Vmatrix_pred <- sigma2_ols*(1+(Xtest%*%solve(t(X)%*%X))%*%t(Xtest))
+y_pred_lwr <- y_pred - 1.96*sqrt(diag(Vmatrix_pred))
+y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
+forecast_df <- data.frame(
+  Time = future_x, 
+  y_pred = as.vector(y_pred), 
+  y_pred_lwr = as.vector(y_pred_lwr), 
+  y_pred_upr = as.vector(y_pred_upr)
+)
+dt$TimeNumeric <- as.numeric(dt$Time)
+forecast_df$TimeNumeric <- as.numeric(forecast_df$Time)
+
+ggplot() +
+  geom_point(data = dt, aes(x = TimeNumeric, y = Value)) +  # Plot the historical data points
+  geom_line(data = dt, aes(x = TimeNumeric, y = yhat_wls), color = "red") +  # Plot the fitted line
+  geom_point(data = forecast_df, aes(x = TimeNumeric, y = y_pred), color = "blue", shape = 1) +  # Plot the forecasted points
+  geom_ribbon(data = forecast_df, aes(x = TimeNumeric, ymin = y_pred_lwr, ymax = y_pred_upr), fill = "blue", alpha = 0.2) +  # Prediction intervals
+  labs(title = "Historical Data and Forecast λ=0.6", x = "Time", y = "Value") +
+  theme_minimal()
+
