@@ -436,61 +436,6 @@ print(h_1)
 ## 4.3  Using λ = 0.9 update FN and hN recursively and provide F10 and h10. We will not calculate predictions for these first 10 steps.
 
 
-## Define lambda
-#lambda <- 0.9
-#
-## Initialize FN and hN with F1 and h1
-#F[1] <- F_1
-#h[1] <- h_1
-#
-#
-## Iterate to update FN and hN up to 10 steps
-#for (i in 2:10) {
-#  # Update FN recursively
-#  F[i] <- F[i-1] + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1))) 
-#
-#  # Update hN recursively
-#  h[i] <- lambda * Linv %*% h[i-1] + f(0)*y[i]
-#
-#  ### Update F_N+1
-#  #F(i) <- F(i-1) + f(-(i-1)) %*% t(f(-(i-1)))
-#  #
-#  ## Update hN recursively
-#  #h(i) <- Linv %*% h(i-1) + f(0)*y[i]
-#
-#}
-#
-# Print the values of F10 and h10
-#cat("F10:\n")
-#print(F[10])
-#
-#cat("\nh10:\n")
-#print(h[10])
-#
-
-# Initialize F and h vectors/matrices
-F <- list()
-h <- list()
-F[[1]] <- F_1
-h[[1]] <- h_1
-
-# Iterate to update FN and hN up to 10 steps
-for (i in 2:10) {
-  # Update FN recursively
-  F[[i]] <- F[[i-1]] + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))
-  
-  # Update hN recursively
-  h[[i]] <- lambda * Linv %*% h[[i-1]] + f(0) * y[i]
-}
-
-# Print the values of F10 and h10
-cat("F10:\n")
-print(F[[10]])
-
-cat("\nh10:\n")
-print(h[[10]])
-
-
 # Initialize F and h vectors/matrices
 F <- list()
 h <- list()
@@ -517,82 +462,51 @@ print(h[[10]])
 # 4.4 Now update the model recursively up to F59 and h59, while also calculating predictions at each step. You should calculate predictions for 1 month ahead, 6 months ahead and 12 months ahead.
 
 
-# Initialize the number of steps
-num_steps <- 59
-
-# Initialize matrices to store predictions
-predictions <- data.frame(Time = future_x)
-
-# Iterate to update F and h recursively up to 59 steps and calculate predictions
-for (i in 2:num_steps) {
-  # Make predictions for 1 month, 6 months, and 12 months ahead
-  for (j in c(1, 6, 12)) {
-    # Calculate predicted value
-    pred <- F[[i]] %*% h[[i]] + j * f(0)
-    
-    # Store prediction
-    predictions[paste0("Month_", j, "_ahead")] <- pred
-  }
-}
-
-# Print the values of F59 and h59
-cat("F59:\n")
-print(F[[59]])
-
-cat("\nh59:\n")
-print(h[[59]])
-
-# Print predictions
-cat("\nPredictions:\n")
-View(predictions)
-
-
-
-
-
 ###### apo to lecture3 
-(F_N <-  (lambda^0) * f(0)%*%t(f(0)))
-(h_N <-  (lambda^0) * f(0) * y[i])
 
 # want to save onestep predictions in dataframe (for lambda = 0.6):
-austa_data$onestep_lamb_06  <- NA
+austa_data$onestep_lamb_09  <- NA
+austa_data$sixstep_lamb_09  <- NA
+austa_data$twelvestep_lamb_09  <- NA
 
 # update iteratively:
 for (i in 2:59){
-  F_N <- F_N + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))  
-  h_N <- lambda * Linv %*% h_N + f(0)*y[i]
-  theta_N <- solve(F_N)%*%h_N
+  theta[[i]] <- solve(F[[i]])%*%h[[i]]
   
-  yhat_N <- t(f(-(i-1):(26-i)))%*%theta_N
-  austa_data$onestep_lamb_06[i+1] <- yhat_N[i+1]
+  yhat[[i]] <- t(f(-(i-1):(59-i)))%*%theta[[i]]
 
+  austa_data$onestep_lamb_06[i] <- yhat[[i+1]]
+  austa_data$sixstep_lamb_06[i] <- yhat[[i+6]]
+  austa_data$twelvestep_lamb_06[i] <- yhat[[i+12]]
+#
+#
 }
 #########
 
 
-
-# 4.5 Plot the predictions for 1 month ahead, 6 months ahead, and 12 months ahead over time.
-
-# Prepare the predictions for plotting
-predictions <- data.frame(Time = future_x)
-for (i in 1:num_steps) {
-  for (j in c(1, 6, 12)) {
-    pred <- F[[i]] %*% h[[i]] + j * f(0)
-    predictions[paste0("Month_", j, "_ahead")] <- pred
-  }
-}
-
-# Convert predictions to long format for easier plotting
-predictions_long <- pivot_longer(predictions, 
-                                  cols = starts_with("Month"), 
-                                  names_to = "Prediction_Type", 
-                                  values_to = "Prediction_Value")
-
-# Combine the training data and predictions
-combined_data <- rbind(dt, predictions_long)
-
-# Plot the training data and predictions
-ggplot(combined_data, aes(x = Time, y = Value, color = Prediction_Type, linetype = Prediction_Type)) +
-  geom_line() +
-  labs(title = "Training Data and Predictions", x = "Time", y = "Value") +
-  theme_minimal()
+#
+## 4.5 Plot the predictions for 1 month ahead, 6 months ahead, and 12 months ahead over time.
+#
+## Prepare the predictions for plotting
+#predictions <- data.frame(Time = future_x)
+#for (i in 1:num_steps) {
+#  for (j in c(1, 6, 12)) {
+#    pred <- F[[i]] %*% h[[i]] + j * f(0)
+#    predictions[paste0("Month_", j, "_ahead")] <- pred
+#  }
+#}
+#
+## Convert predictions to long format for easier plotting
+#predictions_long <- pivot_longer(predictions, 
+#                                  cols = starts_with("Month"), 
+#                                  names_to = "Prediction_Type", 
+#                                  values_to = "Prediction_Value")
+#
+## Combine the training data and predictions
+#combined_data <- rbind(dt, predictions_long)
+#
+## Plot the training data and predictions
+#ggplot(combined_data, aes(x = Time, y = Value, color = Prediction_Type, linetype = Prediction_Type)) +
+#  geom_line() +
+#  labs(title = "Training Data and Predictions", x = "Time", y = "Value") +
+#  theme_minimal()
