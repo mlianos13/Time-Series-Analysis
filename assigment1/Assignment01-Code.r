@@ -431,7 +431,8 @@ print(F_1)
 cat("\nh1:\n")
 print(h_1)
 
-#theta_N <- solve(F_N)%*%h_N # does not work for i=1, is not invertible!
+#theta_1 <- solve(F_1)%*%h_1 # does not work for i=1, is not invertible!
+#print(theta_1)
 
 ## 4.3  Using λ = 0.9 update FN and hN recursively and provide F10 and h10. We will not calculate predictions for these first 10 steps.
 
@@ -439,11 +440,16 @@ print(h_1)
 # Initialize F and h vectors/matrices
 F <- list()
 h <- list()
+theta <- list()
+
 F[[1]] <- F_1
 h[[1]] <- h_1
+# intitialize theta as double[2x1] value with 0
+theta[[1]] <- matrix(c(0,0), nrow=2, ncol=1)
+#theta[[1]] <- 0
 
 # Iterate to update FN and hN up to 10 steps
-for (i in 2:10) {
+for (i in 2:59) {
   # Update FN recursively
   F[[i]] <- F[[i-1]] + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))
   
@@ -458,33 +464,34 @@ print(F[[10]])
 cat("\nh10:\n")
 print(h[[10]])
 
+#str(F)
+#str(h)
 
 # 4.4 Now update the model recursively up to F59 and h59, while also calculating predictions at each step. You should calculate predictions for 1 month ahead, 6 months ahead and 12 months ahead.
 
 
-###### apo to lecture3 
-
 # want to save onestep predictions in dataframe (for lambda = 0.6):
-austa_data$onestep_lamb_09  <- NA
-austa_data$sixstep_lamb_09  <- NA
-austa_data$twelvestep_lamb_09  <- NA
+dt$onestep_lamb_09  <- NA
+dt$sixstep_lamb_09  <- NA
+dt$twelvestep_lamb_09  <- NA
 
+# initialize yhat:
+yhat <- list()
 # update iteratively:
 for (i in 2:59){
-  theta[[i]] <- solve(F[[i]])%*%h[[i]]
   
+  theta[[i]] <- solve(F[[i]])%*%h[[i]]
   yhat[[i]] <- t(f(-(i-1):(59-i)))%*%theta[[i]]
 
-  austa_data$onestep_lamb_06[i] <- yhat[[i+1]]
-  austa_data$sixstep_lamb_06[i] <- yhat[[i+6]]
-  austa_data$twelvestep_lamb_06[i] <- yhat[[i+12]]
-#
-#
+  # Assign predictions to the dataframe
+  dt$onestep_lamb_09[i] <- yhat[[i]][1]
+  dt$sixstep_lamb_09[i] <- yhat[[i]][6]
+  dt$twelvestep_lamb_09[i] <- yhat[[i]][12]
+
 }
-#########
 
 
-#
+
 ## 4.5 Plot the predictions for 1 month ahead, 6 months ahead, and 12 months ahead over time.
 #
 ## Prepare the predictions for plotting
