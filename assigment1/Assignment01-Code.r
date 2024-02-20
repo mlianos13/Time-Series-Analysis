@@ -44,7 +44,7 @@ ggplot(dt, aes(x = x, y = Value)) +
 ##--------------------------------------------------------------------------------------------------------------------------##
 
 
-
+##--------------------------------------------------------------------------------------------------------------------------##
 ## 2. OLS Model
 
 
@@ -184,20 +184,10 @@ qqline(e_ols, col = "red")
 # Histogram of the residuals
 hist(e_ols, breaks = 20, main = "Histogram of Residuals", xlab = "Residuals")
 
+##--------------------------------------------------------------------------------------------------------------------------##
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+##--------------------------------------------------------------------------------------------------------------------------##
 ## 3 WLS-Local Linear Model
 
 # 3.2 plot the "λ-weights" vs time. 
@@ -384,24 +374,14 @@ ggplot() +
   labs(title = "Historical Data and Forecast λ=0.6", x = "Time", y = "Value") +
   theme_minimal()
 
+##--------------------------------------------------------------------------------------------------------------------------##
 
 
 
 
+##--------------------------------------------------------------------------------------------------------------------------##
+## 4 Iterative update and optimal λ
 
-
-
-
-
-
-
-
-
-
-
-
-
-# 4 Iterative update and optimal λ
 lambda <- 0.9
 
 # 4.1
@@ -457,6 +437,7 @@ for (i in 11:58){
     }
 }
 
+# 4.5
 
 ggplot(dt, aes(x = TimeNumeric, y = Value)) +
   geom_point() +  # Plot the historical data points with default color
@@ -467,65 +448,42 @@ ggplot(dt, aes(x = TimeNumeric, y = Value)) +
   geom_line(aes(y = sixstep_lamb_09, color = "6-Months Forecast")) +
   geom_point(aes(y = twelvestep_lamb_09, color = "12-Months Forecast")) +
   geom_line(aes(y = twelvestep_lamb_09, color = "12-Months Forecast")) +
-  scale_color_manual(values = c("OLS Fit" = "red", "1-Month Forecast" = "blue", "6-Months Forecast" = "green", "12-Months Forecast" = "pink"),
+  scale_color_manual(values = c("OLS Fit" = "red", "1-Month Forecast" = "blue", "6-Months Forecast" = "green", "12-Months Forecast" = "#eea1ae"),
                      name = "Forecast Horizon", 
                      labels = c("OLS Fit" = "OLS Fit", "1-Month Forecast" = "1-Month", "6-Months Forecast" = "6-Months", "12-Months Forecast" = "12-Months")) +
-  labs(title = "Historical Data and Forecast λ=0.6", x = "Time", y = "Value") +
+  labs(title = "Historical Data and Forecast λ=0.9", x = "Time", y = "Value") +
   theme_minimal()
 
 
 
+ #plot_N <- ggplot(dt[1:59,], aes(x=TimeNumeric, y=Value)) +
+ #   geom_point() + 
+ #   geom_point(data=dt[1:i,], col="blue") + 
+ #   geom_line(data=dt[1:i,], aes(y=yhat_1[1:i]), col="blue")+
+ #   geom_line(aes(y=yhat_ols), col="red", linetype=2) +  
+ #   ggtitle(paste0("N = ", i))
+ # 
+ # print(plot_N)
 
 
 
+# 4.6 
 
 
+rmse_results <- list()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
- plot_N <- ggplot(dt[1:59,], aes(x=TimeNumeric, y=Value)) +
-    geom_point() + 
-    geom_point(data=dt[1:i,], col="blue") + 
-    geom_line(data=dt[1:i,], aes(y=yhat_1[1:i]), col="blue")+
-    geom_line(aes(y=yhat_ols), col="red", linetype=2) +  
-    ggtitle(paste0("N = ", i))
+for (lambda in seq(0.55, 0.95, by = 0.01)) {
   
-  print(plot_N)
-
-
-
-
-
-
-# 4.5 
-
-
-
-
-dt$lambdas <- NA
-dt$rmse_1  <- NA
-dt$rmse_6  <- NA
-dt$rmse_12 <- NA
-
-
-for (i in seq(0.55, 0.95, by = 0.01)) {
-  lambda <- i
+  rse_1 <- as.numeric()
+  rse_6 <- as.numeric()
+  rse_12 <- as.numeric()
+  
+  
   j <- 1
   (F_N <-  (lambda^0) * f(0)%*%t(f(0)))
   (h_N <-  (lambda^0) * f(0) * y[j])
 
-  # 4.3 
   for (j in 2:10){
     F_N <- F_N + lambda^(j-1) * f(-(j-1)) %*% t(f(-(j-1)))  
     h_N <- lambda * Linv %*% h_N + f(0)*y[j]
@@ -550,28 +508,97 @@ for (i in seq(0.55, 0.95, by = 0.01)) {
       dt$twelvestep_lamb_09[k+12] <- yhat_12
     }
   }
-  
-  for (q in 1:47){
-    # 1-Month Forecast RMSE
-    errors_1 <- dt$Value[q+11:59] - dt$onestep_lamb_09[q+11:59]  # Adjust indices based on your actual data
-    rmse_1 <- sqrt(mean(errors_1^2, na.rm = TRUE))
 
-    # 6-Months Forecast RMSE
-    errors_6 <- dt$Value[q+17:59] - dt$sixstep_lamb_09[q+17:59]  # Adjust the start index based on when 6-month forecasts start
-    rmse_6 <- sqrt(mean(errors_6^2, na.rm = TRUE))
-
-    # 12-Months Forecast RMSE
-    errors_12 <- dt$Value[q+23:59] - dt$twelvestep_lamb_09[q+23:59]  # Adjust the start index based on when 12-month forecasts start
-    rmse_12 <- sqrt(mean(errors_12^2, na.rm = TRUE))
+  for (i in 12:59){  
+    rse_1 <- c(rse_1,(dt$Value[i] - dt$onestep_lamb_09[i])^2)
   }
 
-  dt_rmse$lamda <- lambda
-  dt_rmse$rmse_1 <- rmse_1
-  dt_rmse$rmse_6 <- rmse_6
-  dt_rmse$rmse_12 <- rmse_12
+  for (i in 17:59){
+    rse_6 <- c(rse_6,(dt$Value[i] - dt$sixstep_lamb_09[i])^2)
+  }
+
+  for (i in 23:59){
+    rse_12 <- c(rse_12,(dt$Value[i] - dt$twelvestep_lamb_09[i])^2)
+  }
+
+  rmse_1 <- sqrt(mean(rse_1))
+  rmse_6 <- sqrt(mean(rse_6))
+  rmse_12 <- sqrt(mean(rse_12))
+ 
 
 
-
-
+  # Store RMSE values for the current lambda
+    rmse_results[[as.character(lambda)]] <- list(
+        "1 Month" = sqrt(mean(rse_1)),
+        "6 Months" = sqrt(mean(rse_6)),
+        "12 Months" = sqrt(mean(rse_12))
+    )
 }
+
+# Convert RMSE results to a data frame for easier plotting
+rmse_df <- do.call(rbind, lapply(rmse_results, function(x) as.data.frame(t(x))))
+rmse_df$Lambda <- as.numeric(row.names(rmse_df))
+
+#print('Idx, Optimal Lambda, RMSE for 1 Month Forecast Horizon: ', min_lambda_1_idx, rmse_df$'Lambda'[min_lambda_1_idx] min_lambda_1_rmse)
+
+plot(seq(0.55, 0.95, by = 0.01), rmse_df$'1 Month', type = "l", main = "lambdas for 1month", xlab = "lambda", ylab = "S(lambda)")
+
+plot(seq(0.55, 0.95, by = 0.01), rmse_df$'6 Month', type = "l", main = "lambda for 6months", xlab = "lambda", ylab = "S(lambda)")
+
+plot(seq(0.55, 0.95, by = 0.01), rmse_df$'12 Month', type = "l", main = "lambda for 12months", xlab = "lambda", ylab = "S(lambda)")
+
+# 4.7 Optimal Lambda for 1 Month Forecast Horizon
+
+min_lambda_1_idx <- which.min(rmse_df$`1 Month`)
+min_lambda_1_rmse <- rmse_df$'1 Month'[min_lambda_1_idx]
+
+# 4.8 Optimal Lambda for 6 Month Forecast Horizon
+
+min_lambda_6_idx <- which.min(rmse_df$`6 Month`)
+min_lambda_6_rmse <- rmse_df$'6 Month'[min_lambda_6_idx]
+
+# 4.9 Optimal Lambda for 12 Month Forecast Horizon
+
+min_lambda_12_idx <- which.min(rmse_df$`12 Month`)
+min_lambda_12_rmse <- rmse_df$'12 Month'[min_lambda_6_idx]
+
+# 4.11 It would be problematic to make λ as small as 0.5. Why is that? (hint: compare the sum of weights to the number of parameters).
+
+
+for (i in 12:58){  
+  rmse_1 <- c(rse_1,(dt$Value[i] - dt$Value[i+1])^2)
+}
+rmse_n <- sqrt(mean(rmse_1))
+
+print(rmse_n)
+
+
+# Initialize a vector to store the naive_pred
+naive_pred <- numeric()
+
+for (i in 12:58) {
+  naive_pred <- c(naive_pred, y[i])
+}
+rmse_naive <- sqrt(mean((y[13:59] - naive_pred)^2))
+
+print(rmse_naive)
+
+
+
+
+# 4.12 
+
+data <- read_excel("DST_BIL54_test.xlsx")
+colnames(data)[1] <- "Category"
+
+dt1 <- filter(data, Category == "Drivmidler i alt")
+dt1 <- dt1[, -1]
+
+dt_test <- pivot_longer(dt1, 
+                          cols = everything(),
+                          names_to = "Time", 
+                          values_to = "Value")
+
+dt$Time <- x
+
 
