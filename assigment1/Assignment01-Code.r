@@ -517,3 +517,79 @@ for (i in 2:59){
 #  geom_line() +
 #  labs(title = "Training Data and Predictions", x = "Time", y = "Value") +
 #  theme_minimal()
+
+
+
+## 4.6  Repeat the iterative predictions for λ = 0.55,0.56,0.57,...,0.95, and calculate the root-mean
+#square of the prediction errors for each forecast-horizon (1 month, 6 months and 12 months) and
+#for each value of λ.
+#Plot the root-mean-square of the prediction errors versus λ for both 1 month, 6 months and 12
+#months predictions
+
+# Define a sequence of lambda values
+lambda_values <- seq(0.55, 0.95, by = 0.01)
+str(lambda_values)
+
+# Initialize a list to store RMSE values for each lambda and forecast horizon
+rmse_results <- list()
+
+# Iterate over lambda values
+for (lambda in lambda_values) {
+    # Initialize vectors to store RMSE for each forecast horizon
+    rmse_1_month <- numeric()
+    rmse_6_months <- numeric()
+    rmse_12_months <- numeric()
+    
+    # Inititalize F and h for the first iteration
+    i <- 1
+    (F_N <-  (lambda^0) * f(0)%*%t(f(0)))
+    (h_N <-  (lambda^0) * f(0) * y[i])
+    
+    # Perform iterative predictions for the current lambda
+    for (i in 2:59) {
+        # Update F and h recursively
+        F_N <- F_N + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))  
+        h_N <- lambda * Linv %*% h_N + f(0)*y[i]
+        theta_N <- solve(F_N)%*%h_N
+        #yhat_N <- t(f(-(i-1):(59-i)))%*%theta_N
+    }  
+
+    # Calculate predictions for 1 month, 6 months, and 12 months ahead
+    yhat_1_month <- t(f(1)) %*% theta_N
+    rmse_1_month <- c(rmse_1_month, sqrt(mean((y[i] - yhat_1_month)^2)))
+    if (i+6 <=59){
+        yhat_6_months <- t(f(6)) %*% theta_N
+        rmse_6_months <- c(rmse_6_months, sqrt(mean((y[i] - yhat_6_months)^2)))
+    }
+    if (i+12 <=59){
+        yhat_12_months <- t(f(12)) %*% theta_N
+        rmse_12_months <- c(rmse_12_months, sqrt(mean((y[i] - yhat_12_months)^2)))
+        
+    }
+
+    ## Calculate RMSE for each forecast horizon and store the results
+    #rmse_1_month <- c(rmse_1_month, sqrt(mean((y[i] - yhat_1_month)^2)))
+    #rmse_6_months <- c(rmse_6_months, sqrt(mean((y[i] - yhat_6_months)^2)))
+    #rmse_12_months <- c(rmse_12_months, sqrt(mean((y[i] - yhat_12_months)^2)))
+
+    # Store RMSE values for the current lambda
+    rmse_results[[as.character(lambda)]] <- list(
+        "1 Month" = mean(rmse_1_month),
+        "6 Months" = mean(rmse_6_months),
+        "12 Months" = mean(rmse_12_months)
+    )
+    #}  
+}
+View(OLS)
+View(rmse_df)
+
+# Convert RMSE results to a data frame for easier plotting
+rmse_df <- do.call(rbind, lapply(rmse_results, function(x) as.data.frame(t(x))))
+rmse_df$Lambda <- as.numeric(row.names(rmse_df))
+
+min_lambda_1_idx <- which.min(rmse_df$`1 Month`)
+min_lambda_1_rmse <- rmse_df$'1 Month'[min_lambda_1_idx]
+print('Optimal Lambda, RMSE for 1 Month Forecast Horizon: ', min_lambda_1_idx)
+
+# print list
+print(min_lambda_1_rmse)
