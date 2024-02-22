@@ -211,42 +211,23 @@ for (i in 1:n) {
 print(SIGMA[52:59,52:59])
 
 # estimate parameters with WLS (using only first 26 observations)
-WLS <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
-yhat_wls <- X[1:59,]%*%WLS
-
-theta_0 <- WLS[1]
-theta_1 <- WLS[2]
-print(theta_0)
-print(theta_1)
+WLS0.9 <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
+yhat_wls0.9 <- X[1:59,]%*%WLS0.9
+dt$yhat_wls0.9 <- yhat_wls0.9
+theta_0_0.9 <- WLS0.9[1]
+theta_1_0.9 <- WLS0.9[2]
+print(theta_0_0.9)
+print(theta_1_0.9)
 
 
 # 3.5 Make a forecast for the next 12 months - i.e., compute predicted values with corresponding prediction intervals
 
 ## λ = 0.9
-e_wls <- y - yhat_wls
-RSS_wls <- t(e_wls)%*%e_wls
-sigma2_wls <- as.numeric(RSS_wls/(n - nparams))
+e_wls0.9 <- y - yhat_wls0.9
+RSS_wls0.9 <- t(e_wls0.9)%*%e_wls0.9
+sigma2_wls0.9 <- as.numeric(RSS_wls0.9/(n - nparams))
+y_pred0.9 <- Xtest%*%WLS0.9
 
-y_pred <- Xtest%*%WLS
-Vmatrix_pred <- sigma2_wls*(1+(Xtest%*%solve(t(X)%*%X))%*%t(Xtest))
-y_pred_lwr <- y_pred - 1.96*sqrt(diag(Vmatrix_pred))
-y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
-forecast_df <- data.frame(
-  Time = future_x, 
-  y_pred = as.vector(y_pred), 
-  y_pred_lwr = as.vector(y_pred_lwr), 
-  y_pred_upr = as.vector(y_pred_upr)
-)
-dt$TimeNumeric <- as.numeric(dt$Time)
-forecast_df$TimeNumeric <- as.numeric(forecast_df$Time)
-
-ggplot() +
-  geom_point(data = dt, aes(x = TimeNumeric, y = Value)) +  # Plot the historical data points
-  geom_line(data = dt, aes(x = TimeNumeric, y = yhat_wls), color = "red") +  # Plot the fitted line
-  geom_point(data = forecast_df, aes(x = TimeNumeric, y = y_pred), color = "blue", shape = 1) +  # Plot the forecasted points
-  geom_ribbon(data = forecast_df, aes(x = TimeNumeric, ymin = y_pred_lwr, ymax = y_pred_upr), fill = "blue", alpha = 0.2) +  # Prediction intervals
-  labs(title = "Historical Data and Forecast λ=0.9", x = "Time", y = "Value") +
-  theme_minimal()
 
 ## λ = 0.8
  
@@ -257,38 +238,20 @@ SIGMA <- diag(n)
 for (i in 1:n) {
   SIGMA[i,i] <- 1/lambda^(n-i)
 }
-WLS <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
-yhat_wls <- X[1:59,]%*%WLS
-theta_0 <- WLS[1]
-theta_1 <- WLS[2]
-print(theta_0)
-print(theta_1)
+WLS0.8 <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
+yhat_wls0.8 <- X[1:59,]%*%WLS0.8
+dt$yhat_wls0.8 <- yhat_wls0.8
+theta_0_0.8 <- WLS0.8[1]
+theta_1_0.8 <- WLS0.8[2]
+print(theta_0_0.8)
+print(theta_1_0.8)
 
-e_wls <- y - yhat_wls
-RSS_wls <- t(e_wls)%*%e_wls
-sigma2_wls <- as.numeric(RSS_wls/(n - nparams))
+e_wls0.8 <- y - yhat_wls0.8
+RSS_wls0.8 <- t(e_wls0.8)%*%e_wls0.8
+sigma2_wls0.8 <- as.numeric(RSS_wls0.8/(n - nparams))
+y_pred0.8 <- Xtest%*%WLS0.8
 
-y_pred <- Xtest%*%WLS
-print(y_pred)
-Vmatrix_pred <- sigma2_wls*(1+(Xtest%*%solve(t(X)%*%X))%*%t(Xtest))
-y_pred_lwr <- y_pred - 1.96*sqrt(diag(Vmatrix_pred))
-y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
-forecast_df <- data.frame(
-  Time = future_x, 
-  y_pred = as.vector(y_pred), 
-  y_pred_lwr = as.vector(y_pred_lwr), 
-  y_pred_upr = as.vector(y_pred_upr)
-)
-dt$TimeNumeric <- as.numeric(dt$Time)
-forecast_df$TimeNumeric <- as.numeric(forecast_df$Time)
 
-ggplot() +
-  geom_point(data = dt, aes(x = TimeNumeric, y = Value)) +  # Plot the historical data points
-  geom_line(data = dt, aes(x = TimeNumeric, y = yhat_wls), color = "red") +  # Plot the fitted line
-  geom_point(data = forecast_df, aes(x = TimeNumeric, y = y_pred), color = "blue", shape = 1) +  # Plot the forecasted points
-  geom_ribbon(data = forecast_df, aes(x = TimeNumeric, ymin = y_pred_lwr, ymax = y_pred_upr), fill = "blue", alpha = 0.2) +  # Prediction intervals
-  labs(title = "Historical Data and Forecast λ=0.8", x = "Time", y = "Value") +
-  theme_minimal()
 
 ## λ = 0.7
 
@@ -299,38 +262,19 @@ SIGMA <- diag(n)
 for (i in 1:n) {
   SIGMA[i,i] <- 1/lambda^(n-i)
 }
-WLS <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
-yhat_wls <- X[1:59,]%*%WLS
-theta_0 <- WLS[1]
-theta_1 <- WLS[2]
-print(theta_0)
-print(theta_1)
+WLS0.7 <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
+yhat_wls0.7 <- X[1:59,]%*%WLS0.7
+dt$yhat_wls0.7 <- yhat_wls0.7
+theta_0_0.7 <- WLS0.7[1]
+theta_1_0.7 <- WLS0.7[2]
+print(theta_0_0.7)
+print(theta_1_0.7)
 
-e_wls <- y - yhat_wls
-RSS_wls <- t(e_wls)%*%e_wls
-sigma2_wls <- as.numeric(RSS_wls/(n - nparams))
+e_wls0.7 <- y - yhat_wls0.7
+RSS_wls0.7 <- t(e_wls0.7)%*%e_wls0.7
+sigma2_wls0.7 <- as.numeric(RSS_wls0.7/(n - nparams))
+y_pred0.7 <- Xtest%*%WLS0.7
 
-y_pred <- Xtest%*%WLS
-print(y_pred)
-Vmatrix_pred <- sigma2_wls*(1+(Xtest%*%solve(t(X)%*%X))%*%t(Xtest))
-y_pred_lwr <- y_pred - 1.96*sqrt(diag(Vmatrix_pred))
-y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
-forecast_df <- data.frame(
-  Time = future_x, 
-  y_pred = as.vector(y_pred), 
-  y_pred_lwr = as.vector(y_pred_lwr), 
-  y_pred_upr = as.vector(y_pred_upr)
-)
-dt$TimeNumeric <- as.numeric(dt$Time)
-forecast_df$TimeNumeric <- as.numeric(forecast_df$Time)
-
-ggplot() +
-  geom_point(data = dt, aes(x = TimeNumeric, y = Value)) +  # Plot the historical data points
-  geom_line(data = dt, aes(x = TimeNumeric, y = yhat_wls), color = "red") +  # Plot the fitted line
-  geom_point(data = forecast_df, aes(x = TimeNumeric, y = y_pred), color = "blue", shape = 1) +  # Plot the forecasted points
-  geom_ribbon(data = forecast_df, aes(x = TimeNumeric, ymin = y_pred_lwr, ymax = y_pred_upr), fill = "blue", alpha = 0.2) +  # Prediction intervals
-  labs(title = "Historical Data and Forecast λ=0.7", x = "Time", y = "Value") +
-  theme_minimal()
 
 ## λ = 0.6
 
@@ -341,38 +285,53 @@ SIGMA <- diag(n)
 for (i in 1:n) {
   SIGMA[i,i] <- 1/lambda^(n-i)
 }
-WLS <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
-yhat_wls <- X[1:59,]%*%WLS
-theta_0 <- WLS[1]
-theta_1 <- WLS[2]
-print(theta_0)
-print(theta_1)
+WLS0.6 <- solve(t(X[1:59,])%*%solve(SIGMA)%*%X[1:59,])%*%(t(X[1:59,])%*%solve(SIGMA)%*%y[1:59])
+yhat_wls0.6 <- X[1:59,]%*%WLS0.6
+dt$yhat_wls0.6 <- yhat_wls0.6
+theta_0_0.6 <- WLS0.6[1]
+theta_1_0.6 <- WLS0.6[2]
+print(theta_0_0.6)
+print(theta_1_0.6)
 
-e_wls <- y - yhat_wls
-RSS_wls <- t(e_wls)%*%e_wls
-sigma2_wls <- as.numeric(RSS_wls/(n - nparams))
- 
-y_pred <- Xtest%*%WLS
-print(y_pred)
-Vmatrix_pred <- sigma2_wls*(1+(Xtest%*%solve(t(X)%*%X))%*%t(Xtest))
-y_pred_lwr <- y_pred - 1.96*sqrt(diag(Vmatrix_pred))
-y_pred_upr <- y_pred + 1.96*sqrt(diag(Vmatrix_pred))
-forecast_df <- data.frame(
+e_wls0.6 <- y - yhat_wls0.6
+RSS_wls0.6 <- t(e_wls0.6)%*%e_wls0.6
+sigma2_wls0.6 <- as.numeric(RSS_wls0.6/(n - nparams))
+ y_pred0.6 <- Xtest%*%WLS0.6
+
+
+
+# Plot
+
+forecast_dfwls <- data.frame( 
   Time = future_x, 
-  y_pred = as.vector(y_pred), 
-  y_pred_lwr = as.vector(y_pred_lwr), 
-  y_pred_upr = as.vector(y_pred_upr)
+  y_pred0.6 = as.vector(y_pred0.6), 
+  y_pred0.7 = as.vector(y_pred0.7), 
+  y_pred0.8 = as.vector(y_pred0.8),
+  y_pred0.9 = as.vector(y_pred0.9)
 )
-dt$TimeNumeric <- as.numeric(dt$Time)
-forecast_df$TimeNumeric <- as.numeric(forecast_df$Time)
+
 
 ggplot() +
-  geom_point(data = dt, aes(x = TimeNumeric, y = Value)) +  # Plot the historical data points
-  geom_line(data = dt, aes(x = TimeNumeric, y = yhat_wls), color = "red") +  # Plot the fitted line
-  geom_point(data = forecast_df, aes(x = TimeNumeric, y = y_pred), color = "blue", shape = 1) +  # Plot the forecasted points
-  geom_ribbon(data = forecast_df, aes(x = TimeNumeric, ymin = y_pred_lwr, ymax = y_pred_upr), fill = "blue", alpha = 0.2) +  # Prediction intervals
-  labs(title = "Historical Data and Forecast λ=0.6", x = "Time", y = "Value") +
+  geom_point(data = dt, aes(x = Time, y = Value), color = "black", size = 1.5) + # Plot actual data points
+  geom_line(data = dt, aes(x = Time, y = yhat_ols), color = "red", size = 0.7) + # Plot OLS fitted line
+  
+  # Plot WLS fitted lines for each lambda
+  geom_line(data = dt, aes(x = Time, y = yhat_wls0.6), color = "blue", size = 0.7) + # Plot WLS0.6 fitted line
+  geom_line(data = dt, aes(x = Time, y = yhat_wls0.7), color = "green", size = 0.7) + # Plot WLS0.7 fitted line
+  geom_line(data = dt, aes(x = Time, y = yhat_wls0.8), color = "pink", size = 0.7) + # Plot WLS0.8 fitted line
+  geom_line(data = dt, aes(x = Time, y = yhat_wls0.9), color = "orange", size = 0.7) + # Plot WLS0.9 fitted line
+  
+  # Plot forecasted points for each lambda
+  geom_point(data = forecast_df, aes(x = Time, y = y_pred, color = "OLS"), size = 1) +
+  geom_point(data = forecast_dfwls, aes(x = Time, y = y_pred0.6, color = "λ=0.6"), size = 1) +
+  geom_point(data = forecast_dfwls, aes(x = Time, y = y_pred0.7, color = "λ=0.7"), size = 1) +
+  geom_point(data = forecast_dfwls, aes(x = Time, y = y_pred0.8, color = "λ=0.8"), size = 1) +
+  geom_point(data = forecast_dfwls, aes(x = Time, y = y_pred0.9, color = "λ=0.9"), size = 1) +
+  
+  scale_color_manual(values = c("OLS" = "red", "λ=0.6" = "blue", "λ=0.7" = "green", "λ=0.8" = "pink", "λ=0.9" = "orange")) +
+  labs(title = "Historical Data, OLS and WLS for different values of λ Forecasts", x = "Time", y = "Value") +
   theme_minimal()
+
 
 ##--------------------------------------------------------------------------------------------------------------------------##
 
@@ -414,8 +373,6 @@ for (i in 2:10){
 dt$onestep_lamb_09  <- NA
 dt$sixstep_lamb_09  <- NA
 dt$twelvestep_lamb_09 <- NA
-
-# Assuming lambda and y are defined above
 
 for (i in 11:58){
   # 1 month ahead prediction
@@ -541,11 +498,11 @@ rmse_df$Lambda <- as.numeric(row.names(rmse_df))
 
 #print('Idx, Optimal Lambda, RMSE for 1 Month Forecast Horizon: ', min_lambda_1_idx, rmse_df$'Lambda'[min_lambda_1_idx] min_lambda_1_rmse)
 
-plot(seq(0.55, 0.95, by = 0.01), rmse_df$'1 Month', type = "l", main = "lambdas for 1month", xlab = "lambda", ylab = "S(lambda)")
+plot(seq(0.55, 0.95, by = 0.01), rmse_df$'1 Month', type = "l", main = "RMSE 1-Mont", xlab = "λ", ylab = "RMSE")
 
-plot(seq(0.55, 0.95, by = 0.01), rmse_df$'6 Month', type = "l", main = "lambda for 6months", xlab = "lambda", ylab = "S(lambda)")
+plot(seq(0.55, 0.95, by = 0.01), rmse_df$'6 Month', type = "l", main = "RMSE 6-Months", xlab = "λ", ylab = "RMSE")
 
-plot(seq(0.55, 0.95, by = 0.01), rmse_df$'12 Month', type = "l", main = "lambda for 12months", xlab = "lambda", ylab = "S(lambda)")
+plot(seq(0.55, 0.95, by = 0.01), rmse_df$'12 Month', type = "l", main = "RMSE 12-Months", xlab = "λ", ylab = "RMSE")
 
 # 4.7 Optimal Lambda for 1 Month Forecast Horizon
 
@@ -562,26 +519,88 @@ min_lambda_6_rmse <- rmse_df$'6 Month'[min_lambda_6_idx]
 min_lambda_12_idx <- which.min(rmse_df$`12 Month`)
 min_lambda_12_rmse <- rmse_df$'12 Month'[min_lambda_6_idx]
 
+
+# 4.10 
+
+
+lambda <- 0.5
+
+weights <- lambda^((n-1):0)
+sum <- sum(weights[1:59])
+print(sum)
+
+i <- 1
+(F_N <-  (lambda^0) * f(0)%*%t(f(0)))
+(h_N <-  (lambda^0) * f(0) * y[i])
+
+for (i in 2:10){
+  F_N <- F_N + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))  
+  h_N <- lambda * Linv %*% h_N + f(0)*y[i]
+  theta_N <- solve(F_N)%*%h_N
+}
+
+dt$onestep_lamb_09  <- NA
+dt$sixstep_lamb_09  <- NA
+dt$twelvestep_lamb_09 <- NA
+
+for (i in 11:58){
+  # 1 month ahead prediction
+
+    F_N <- F_N + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))  
+    h_N <- lambda * Linv %*% h_N + f(0)*y[i]
+    theta_N <- solve(F_N)%*%h_N
+    yhat_1 <- t(f(1))%*%theta_N
+    dt$onestep_lamb_09[i+1] <- yhat_1
+    if (i + 6 <= 59){
+      # 6 months ahead prediction
+      yhat_6 <- t(f(6))%*%theta_N
+      dt$sixstep_lamb_09[i+6] <- yhat_6
+    }
+    if (i + 12 <= 59){
+      # 12 months ahead prediction
+      yhat_12 <- t(f(12))%*%theta_N
+      dt$twelvestep_lamb_09[i+12] <- yhat_12
+    }
+}
+ggplot(dt, aes(x = TimeNumeric, y = Value)) +
+  geom_point() +  # Plot the historical data points with default color
+  geom_line(aes(y = yhat_ols, color = "OLS Fit"), linetype = "solid") +  # Plot the fitted line with color aesthetic
+  geom_point(aes(y = onestep_lamb_09, color = "1-Month Forecast")) +  # Plot the forecasted points with color aesthetic
+  geom_line(aes(y = onestep_lamb_09, color = "1-Month Forecast")) +  # Plot the forecasted points with color aesthetic
+  geom_point(aes(y = sixstep_lamb_09, color = "6-Months Forecast")) +
+  geom_line(aes(y = sixstep_lamb_09, color = "6-Months Forecast")) +
+  geom_point(aes(y = twelvestep_lamb_09, color = "12-Months Forecast")) +
+  geom_line(aes(y = twelvestep_lamb_09, color = "12-Months Forecast")) +
+  scale_color_manual(values = c("OLS Fit" = "red", "1-Month Forecast" = "blue", "6-Months Forecast" = "green", "12-Months Forecast" = "#eea1ae"),
+                     name = "Forecast Horizon", 
+                     labels = c("OLS Fit" = "OLS Fit", "1-Month Forecast" = "1-Month", "6-Months Forecast" = "6-Months", "12-Months Forecast" = "12-Months")) +
+  labs(title = "Historical Data and Forecast λ=0.5", x = "Time", y = "Value") +
+  theme_minimal()
+
+
+
+
+
 # 4.11 It would be problematic to make λ as small as 0.5. Why is that? (hint: compare the sum of weights to the number of parameters).
 
 
-for (i in 12:58){  
-  rmse_1 <- c(rse_1,(dt$Value[i] - dt$Value[i+1])^2)
-}
-rmse_n <- sqrt(mean(rmse_1))
-
-print(rmse_n)
-
-
-# Initialize a vector to store the naive_pred
-naive_pred <- numeric()
-
-for (i in 12:58) {
-  naive_pred <- c(naive_pred, y[i])
-}
-rmse_naive <- sqrt(mean((y[13:59] - naive_pred)^2))
-
-print(rmse_naive)
+#for (i in 12:58){  
+#  rmse_1 <- c(rse_1,(dt$Value[i] - dt$Value[i+1])^2)
+#}
+#rmse_n <- sqrt(mean(rmse_1))
+#
+#print(rmse_n)
+#
+#
+## Initialize a vector to store the naive_pred
+#naive_pred <- numeric()
+#
+#for (i in 12:58) {
+#  naive_pred <- c(naive_pred, y[i])
+#}
+#rmse_naive <- sqrt(mean((y[13:59] - naive_pred)^2))
+#
+#print(rmse_naive)
 
 
 
@@ -594,11 +613,149 @@ colnames(data)[1] <- "Category"
 dt1 <- filter(data, Category == "Drivmidler i alt")
 dt1 <- dt1[, -1]
 
+months <- seq(as.Date("2022-12-01"), as.Date("2023-11-01"), by="month")
+x <- as.numeric(format(months, "%Y")) + (as.numeric(format(months, "%m")) - 1) / 12 
+
 dt_test <- pivot_longer(dt1, 
                           cols = everything(),
                           names_to = "Time", 
                           values_to = "Value")
 
-dt$Time <- x
+dt_test$Time <- x
+
+
+
+dt[c("yhat_wls0.9", "yhat_wls0.8", "yhat_wls0.7", "yhat_wls0.6", "onestep_lamb_09", "sixstep_lamb_09", "twelvestep_lamb_09")] <- list(NULL)
+
+
+
+
+months <- seq(as.Date("2018-01-01"), as.Date("2023-11-01"), by="month")
+z <- as.numeric(format(months, "%Y")) + (as.numeric(format(months, "%m")) - 1) / 12
+
+# Concatenate Value columns from dt and dt_test
+combined_values1 <- c(dt$Value, dt_test$Value)
+final_dt <- data.frame(
+  Time = z,
+  Value = combined_values1
+)
+
+
+
+final_dt$onestep_lamb_0.55  <- NA
+final_dt$sixstep_lamb_0.79  <- NA 
+final_dt$twelvestep_lamb_0.95 <- NA
+
+# 1-month ahead forecast
+
+lambda <- 0.55
+f <- function(j) rbind(1, j)
+L <- matrix(c(1.,0., 1.,1.),
+            byrow=TRUE, nrow=2)
+Linv <- solve(L) 
+i <- 1
+(F_N <-  (lambda^0) * f(0)%*%t(f(0)))
+(h_N <-  (lambda^0) * f(0) * y[i])
+for (i in 2:10){
+  F_N <- F_N + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))  
+  h_N <- lambda * Linv %*% h_N + f(0)*y[i]
+  theta_N <- solve(F_N)%*%h_N
+}
+
+for (i in 11:70){
+    F_N <- F_N + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))  
+    h_N <- lambda * Linv %*% h_N + f(0)*y[i]
+    theta_N <- solve(F_N)%*%h_N
+    yhat <- t(f(1))%*%theta_N
+    final_dt$onestep_lamb_0.55[i+1] <- yhat
+}
+
+
+
+# 6-months ahead forecastlambda <- 0.9
+lambda <- 0.79
+f <- function(j) rbind(1, j)
+L <- matrix(c(1.,0., 1.,1.),
+            byrow=TRUE, nrow=2)
+Linv <- solve(L) 
+i <- 1
+(F_N <-  (lambda^0) * f(0)%*%t(f(0)))
+(h_N <-  (lambda^0) * f(0) * y[i])
+for (i in 2:10){
+  F_N <- F_N + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))  
+  h_N <- lambda * Linv %*% h_N + f(0)*y[i]
+  theta_N <- solve(F_N)%*%h_N
+}
+
+for (i in 11:64){
+    F_N <- F_N + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))  
+    h_N <- lambda * Linv %*% h_N + f(0)*y[i]
+    theta_N <- solve(F_N)%*%h_N
+    if (i + 6 <= 65){
+      # 6 months ahead prediction
+      yhat_6 <- t(f(6))%*%theta_N
+      final_dt$sixstep_lamb_0.79[i+6] <- yhat_6
+    }
+}
+
+
+# 12-months ahead forecast
+
+lambda <- 0.95
+f <- function(j) rbind(1, j)
+L <- matrix(c(1.,0., 1.,1.),
+            byrow=TRUE, nrow=2)
+Linv <- solve(L) 
+i <- 1
+(F_N <-  (lambda^0) * f(0)%*%t(f(0)))
+(h_N <-  (lambda^0) * f(0) * y[i])
+for (i in 2:10){
+  F_N <- F_N + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))  
+  h_N <- lambda * Linv %*% h_N + f(0)*y[i]
+  theta_N <- solve(F_N)%*%h_N
+}
+
+
+for (i in 11:70){
+    F_N <- F_N + lambda^(i-1) * f(-(i-1)) %*% t(f(-(i-1)))  
+    h_N <- lambda * Linv %*% h_N + f(0)*y[i]
+    theta_N <- solve(F_N)%*%h_N
+    if (i + 12 <= 71){
+      # 12 months ahead prediction
+      yhat_12 <- t(f(12))%*%theta_N
+      final_dt$twelvestep_lamb_0.95[i+12] <- yhat_12
+    }
+}
+
+final_dt$DataType <- "Historical"  # Default to historical
+final_dt$DataType[60:71] <- "Test"  # Change to test for the last 12 entries
+
+# Create a data frame for the specific predictions
+specific_predictions <- data.frame(
+  Time = final_dt$Time[c(60, 65, 71)],
+  Value = c(final_dt$onestep_lamb_0.55[60], final_dt$sixstep_lamb_0.79[65], final_dt$twelvestep_lamb_0.95[71]),
+  DataType = c("1-Month Ahead Prediction", "6-Month Ahead Prediction", "12-Month Ahead Prediction")
+)
+
+# Combining dt and specific_predictions for plotting
+plot_data <- rbind(
+  final_dt[, c("Time", "Value", "DataType")],  # Use only the relevant columns from dt
+  specific_predictions
+)
+
+# Plotting
+ggplot(plot_data, aes(x = Time, y = Value, color = DataType)) +
+  geom_line(data = final_dt, aes(group = 1)) +  # Add this to connect all points with lines without distinguishing by DataType
+  geom_point() +
+  scale_color_manual(values = c("Historical" = "black", "Test" = "blue",
+                                "1-Month Ahead Prediction" = "red", 
+                                "6-Month Ahead Prediction" = "green", 
+                                "12-Month Ahead Prediction" = "purple")) +
+  theme_minimal() +
+  labs(title = "Historical, Test Data and Specific Predictions",
+       x = "Time",
+       y = "Value") +
+  theme(legend.title = element_blank())
+
 
 
